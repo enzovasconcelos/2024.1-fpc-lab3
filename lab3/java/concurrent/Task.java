@@ -1,38 +1,41 @@
 import java.util.*;
 import java.io.*;
+import java.util.concurrent.*;
 
 public class Task implements Runnable {
 
     String path;
-    List<Long> chuncks;
+    Map<String, HashMap<Long, Boolean>> fileFingerprints;
+    Semaphore mutex;
 
-    public Task(String path) {
+    public Task(String path, Map<String, HashMap<Long, Boolean>> fingerprints) {
         this.path = path;
+        this.fileFingerprints = fingerprints;
+        mutex = new Semaphore(1);
     }
 
     public void run() {
         try {
-            chuncks = fileSum(this.path);
-        } catch(IOException e) {}
+            HashMap<Long, Boolean> chuncks = fileSum(this.path);
+            mutex.acquire();
+            fileFingerprints.put(this.path, chuncks);
+            mutex.release();
+        } catch(IOException e) {} catch(InterruptedException e) {}
     }
 
     public String getPath() {
         return path;
     }
 
-    public List<Long> getFingerprint() {
-        return chuncks;
-    }
-
-    private static List<Long> fileSum(String filePath) throws IOException {
+    private static HashMap<Long, Boolean> fileSum(String filePath) throws IOException {
         File file = new File(filePath);
-        List<Long> chunks = new ArrayList<>();
+        HashMap<Long, Boolean> chunks = new HashMap<Long, Boolean>();
         try (FileInputStream inputStream = new FileInputStream(file)) {
             byte[] buffer = new byte[100];
             int bytesRead;
             while ((bytesRead = inputStream.read(buffer)) != -1) {
                 long sum = sum(buffer, bytesRead);
-                chunks.add(sum);
+                chunks.put(sum, true);
             }
         }
         return chunks;

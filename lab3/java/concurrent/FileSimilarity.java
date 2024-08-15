@@ -10,13 +10,13 @@ public class FileSimilarity {
         }
 
         // Create a map to store the fingerprint for each file
-        Map<String, List<Long>> fileFingerprints = new HashMap<>();
+        Map<String, HashMap<Long, Boolean>> fileFingerprints = new HashMap<>();
 
         List<Thread> threads = new ArrayList<Thread>();
         List<Task> tasks = new ArrayList<Task>();
         // Calculate the fingerprint for each file
         for (String path : args) {
-            Task task = new Task(path);
+            Task task = new Task(path, fileFingerprints);
             Thread thread = new Thread(task, path);
             thread.start();
             tasks.add(task);
@@ -27,19 +27,13 @@ public class FileSimilarity {
         for (Thread t : threads)
             t.join();
 
-        // Put in fingerprints
-        for (Task t : tasks) {
-            List<Long> fingerprint = t.getFingerprint();
-            fileFingerprints.put(t.getPath(), fingerprint);
-        }
-
         // Compare each pair of files
         for (int i = 0; i < args.length; i++) {
             for (int j = i + 1; j < args.length; j++) {
                 String file1 = args[i];
                 String file2 = args[j];
-                List<Long> fingerprint1 = fileFingerprints.get(file1);
-                List<Long> fingerprint2 = fileFingerprints.get(file2);
+                HashMap<Long, Boolean> fingerprint1 = fileFingerprints.get(file1);
+                HashMap<Long, Boolean> fingerprint2 = fileFingerprints.get(file2);
                 float similarityScore = similarity(fingerprint1, fingerprint2);
                 System.out.println("Similarity between " + file1 + " and " + file2 + ": " + (similarityScore * 100) + "%");
             }
@@ -47,12 +41,12 @@ public class FileSimilarity {
     }
 
 
-    private static float similarity(List<Long> base, List<Long> target) {
+    private static float similarity(HashMap<Long, Boolean> base, HashMap<Long, Boolean> target) {
         int counter = 0;
-        List<Long> targetCopy = new ArrayList<>(target);
+        HashMap<Long, Boolean> targetCopy = new HashMap<Long, Boolean>(target);
 
-        for (Long value : base) {
-            if (targetCopy.contains(value)) {
+        for (Long value : base.keySet()) {
+            if (targetCopy.containsKey(value)) {
                 counter++;
                 targetCopy.remove(value);
             }
