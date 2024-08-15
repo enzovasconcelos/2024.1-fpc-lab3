@@ -34,8 +34,10 @@ public class FileSimilarity {
                 String file2 = args[j];
                 HashMap<Long, Boolean> fingerprint1 = fileFingerprints.get(file1);
                 HashMap<Long, Boolean> fingerprint2 = fileFingerprints.get(file2);
-                float similarityScore = similarity(fingerprint1, fingerprint2);
-                System.out.println("Similarity between " + file1 + " and " + file2 + ": " + (similarityScore * 100) + "%");
+                Thread t = new Thread(new Task2(fingerprint1, fingerprint2, file1, file2), i + " " + j);
+                t.start();
+                //float similarityScore = similarity(fingerprint1, fingerprint2);
+                //System.out.println("Similarity between " + file1 + " and " + file2 + ": " + (similarityScore * 100) + "%");
             }
         }
     }
